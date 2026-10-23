@@ -8,6 +8,7 @@ target/*
 logs/
 *.log
 node_modules/
+microemulator-2.0.4/
 
 ### IntelliJ IDEA ###
 .idea/

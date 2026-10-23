@@ -70,27 +70,31 @@ module.exports = async function handler(req, res) {
 
     // Insert user
     const [result] = await connection.execute(
-      'INSERT INTO users (username, password, role, active, login_lock) VALUES (?, ?, 0, 1, 0)',
-      [cleanUser, hashedPass]
+      'INSERT INTO users (username, password, role, active, phone, gmail, vnd, tongnap, login_lock) VALUES (?, ?, 0, 1, "0988888888", ?, 0, 0, 0)',
+      [cleanUser, hashedPass, `${cleanUser}@gmail.com`]
     );
 
     const newUserId = result.insertId;
 
-    // Insert corresponding player record
+    // Insert corresponding player record with starter items/currency
     await connection.execute(
-      'INSERT INTO players (user_id, level_main, gender, scores, is_online) VALUES (?, 1, ?, 0, 0)',
+      'INSERT INTO players (user_id, level_main, gender, scores, is_online, xu, luong) VALUES (?, 1, ?, 0, 0, 10000000, 100000)',
       [newUserId, chosenGender]
     );
 
     return res.status(200).json({
       success: true,
-      message: 'Đăng ký tài khoản ' + cleanUser + ' thành công!'
+      message: 'Đăng ký tài khoản ' + cleanUser + ' thành công! Nhận sẵn 10M Xu và 100k Lượng.'
     });
   } catch (error) {
     console.error('Database register error:', error);
+    let msg = error.message || 'Lỗi server';
+    if (error.code === 'ECONNREFUSED' && (!process.env.DB_HOST || process.env.DB_HOST === '127.0.0.1')) {
+      msg = 'Database đang chạy trên máy tính cá nhân (127.0.0.1). Trang Vercel trên Cloud không thể kết nối tới máy tính của bạn. Vui lòng mở file TẠO_TÀI_KHOẢN.bat trong thư mục dự án để tạo tài khoản ngay!';
+    }
     return res.status(500).json({
       success: false,
-      message: 'Không thể kết nối đến cơ sở dữ liệu: ' + (error.message || 'Lỗi server')
+      message: msg
     });
   } finally {
     if (connection) {
