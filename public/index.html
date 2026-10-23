@@ -539,14 +539,21 @@
         <div class="phone-wrapper">
           <div class="phone-speaker"></div>
           <div class="screen-container">
-            <canvas id="gameCanvas" width="320" height="380"></canvas>
+            <canvas id="gameCanvas" width="320" height="380" style="display:none;"></canvas>
+            <iframe id="webEmulatorFrame" allow="autoplay; fullscreen" style="width: 100%; height: 100%; border: none; display: none; background: #000;" src="about:blank"></iframe>
             <div id="screenOverlay" class="screen-overlay">
-              <div style="font-size: 48px; margin-bottom: 12px;">🌾</div>
-              <h3>Avatar 2.5.8 Web</h3>
-              <p>Trải nghiệm Avatar nông trại, câu cá, kết bạn trên trình duyệt của bạn!</p>
-              <button class="play-btn" id="startBtn" onclick="initWebGame()">BẮT ĐẦU CHƠI</button>
-              <div id="loadingStatus" style="font-size: 0.75rem; color: #38bdf8; margin-top: 12px; display: none;">Đang nạp file JAR...</div>
+              <div style="font-size: 44px; margin-bottom: 8px;">🌾</div>
+              <h3 style="font-size: 1.15rem; margin-bottom: 6px;">Avatar 2.5.8</h3>
+              <p style="font-size: 0.8rem; margin-bottom: 14px; color: var(--text-muted); line-height: 1.4;">
+                Trải nghiệm Avatar nông trại, câu cá, kết bạn trên trình duyệt của bạn!
+              </p>
+              <div style="display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 240px;">
+                <button class="play-btn" id="startBtn" onclick="initWebGame()">🎮 MỞ GIẢ LẬP TRÊN WEB</button>
+                <a href="/Avatar258.jar" download class="btn-download-quick" style="text-align: center; text-decoration: none; font-size: 0.82rem; padding: 8px; border-radius: 8px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); font-weight: 600;">📥 Tải File Avatar258.jar</a>
+              </div>
+              <div id="loadingStatus" style="font-size: 0.75rem; color: #38bdf8; margin-top: 10px; display: none;">Đang nạp trình giả lập...</div>
             </div>
+            <button id="exitEmulatorBtn" onclick="closeEmulator()" style="display:none; position: absolute; top: 6px; right: 6px; z-index: 20; background: rgba(239, 68, 68, 0.85); color: white; border: none; border-radius: 6px; padding: 3px 8px; font-size: 0.7rem; font-weight: bold; cursor: pointer;">✕ Thoát</button>
           </div>
 
           <!-- Phone Keypad -->
@@ -746,35 +753,37 @@ node ws-proxy.js</pre>
 
     // Web Game Init
     let gameRunning = false;
-    async function initWebGame() {
+    function initWebGame() {
+      const frame = document.getElementById('webEmulatorFrame');
+      const overlay = document.getElementById('screenOverlay');
+      const exitBtn = document.getElementById('exitEmulatorBtn');
       const startBtn = document.getElementById('startBtn');
       const statusText = document.getElementById('loadingStatus');
-      startBtn.disabled = true;
-      startBtn.innerText = 'Đang tải máy ảo...';
+
       statusText.style.display = 'block';
+      statusText.innerText = 'Đang khởi chạy trình giả lập Web J2ME...';
+      startBtn.disabled = true;
 
-      try {
-        statusText.innerText = 'Đang khởi tạo WebAssembly JVM...';
-        await cheerpjInit({
-          version: 8,
-          enablePreciseAppletSizing: true
-        });
+      // Load FreeJ2ME Web
+      frame.src = 'https://zb3.github.io/freej2me-web/web/';
+      frame.style.display = 'block';
+      exitBtn.style.display = 'block';
+      overlay.classList.add('hidden');
+      startBtn.disabled = false;
+      statusText.style.display = 'none';
+      gameRunning = true;
+    }
 
-        statusText.innerText = 'Đang nạp màn hình hiển thị...';
-        const display = cheerpjCreateDisplay(320, 380, document.querySelector('.screen-container'));
-        
-        statusText.innerText = 'Đang khởi chạy Avatar 2.5.8...';
-        document.getElementById('screenOverlay').classList.add('hidden');
-        
-        // Run jar via CheerpJ
-        await cheerpjRunJar('/Avatar258.jar');
-        gameRunning = true;
-      } catch (err) {
-        console.error(err);
-        statusText.innerText = 'Lỗi nạp máy ảo: ' + err.message + '. Bạn có thể tải file JAR để chơi qua giả lập.';
-        startBtn.disabled = false;
-        startBtn.innerText = 'THỬ LẠI';
-      }
+    function closeEmulator() {
+      const frame = document.getElementById('webEmulatorFrame');
+      const overlay = document.getElementById('screenOverlay');
+      const exitBtn = document.getElementById('exitEmulatorBtn');
+
+      frame.src = 'about:blank';
+      frame.style.display = 'none';
+      exitBtn.style.display = 'none';
+      overlay.classList.remove('hidden');
+      gameRunning = false;
     }
 
     // Key Handler simulation
