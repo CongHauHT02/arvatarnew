@@ -16,6 +16,25 @@ console.log(`[Avatar WebSocket Proxy] Running on port: ${WS_PORT}`);
 console.log(`[Target Game Server] Forwarding to: ${TCP_HOST}:${TCP_PORT}`);
 console.log(`=======================================================`);
 
+// Raw TCP Bridge from Port 14444 (used by Xu So Dieu Ky) -> Port 19128
+const tcpBridge = net.createServer((clientSocket) => {
+  console.log(`[TCP-14444] Client connected from ${clientSocket.remoteAddress}`);
+  const targetSocket = new net.Socket();
+  targetSocket.connect(TCP_PORT, TCP_HOST, () => {});
+  clientSocket.pipe(targetSocket);
+  targetSocket.pipe(clientSocket);
+  clientSocket.on('error', () => targetSocket.destroy());
+  targetSocket.on('error', () => clientSocket.destroy());
+});
+
+tcpBridge.on('error', (err) => {
+  console.log('[TCP Bridge 14444] Notice:', err.message);
+});
+
+tcpBridge.listen(14444, () => {
+  console.log(`[TCP Bridge] Forwarding raw port 14444 -> ${TCP_HOST}:${TCP_PORT}`);
+});
+
 let connectionCount = 0;
 
 wss.on('connection', (ws, req) => {
